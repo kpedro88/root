@@ -371,7 +371,7 @@ void TClingCallFunc::make_narg_ctor(const unsigned N, ostringstream &typedefbuf,
          }
       }
       if (isReference) {
-         callbuf << "**(" << type_name.c_str() << "**)args["
+         callbuf << "*(" << type_name.c_str() << "*)args["
                  << i << "]";
       } else if (isPointer) {
          callbuf << "*(" << type_name.c_str() << "**)args["
@@ -435,7 +435,7 @@ void TClingCallFunc::make_narg_call(const unsigned N, ostringstream &typedefbuf,
          }
       }
       if (isReference) {
-         callbuf << "**(" << type_name.c_str() << "**)args["
+         callbuf << "*(" << type_name.c_str() << "*)args["
                  << i << "]";
       } else if (isPointer) {
          callbuf << "*(" << type_name.c_str() << "**)args["
