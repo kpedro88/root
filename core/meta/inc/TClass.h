@@ -35,7 +35,7 @@
 #endif
 #include <map>
 #include <string>
-#if __cplusplus > 199711L
+#if __cplusplus >= 201103L
 #include <atomic>
 #endif
 class TBaseClass;
@@ -89,7 +89,7 @@ public:
 private:
 
    mutable TObjArray *fStreamerInfo;    //Array of TVirtualStreamerInfo
-#if __cplusplus > 199711L
+#if __cplusplus >= 201103L
    mutable std::atomic<std::map<std::string, TObjArray*>*> fConversionStreamerInfo; //Array of the streamer infos derived from another class.
 #else
    mutable std::map<std::string, TObjArray*> *fConversionStreamerInfo; //Array of the streamer infos derived from another class.
@@ -115,7 +115,11 @@ private:
    TString            fContextMenuTitle;//context menu title
    const type_info   *fTypeInfo;        //pointer to the C++ type information.
    ShowMembersFunc_t  fShowMembers;     //pointer to the class's ShowMembers function
+#if __cplusplus >= 201103L
+   mutable std::atomic<void*> fInterShowMembers;//Interpreter call setup for ShowMembers
+#else
    mutable void      *fInterShowMembers;//Interpreter call setup for ShowMembers
+#endif
    TClassStreamer    *fStreamer;        //pointer to streamer function
    TString            fSharedLibs;      //shared libraries containing class code
 
@@ -139,17 +143,18 @@ private:
    Int_t               fSizeof;         //Sizeof the class.
 
    mutable Int_t      fCanSplit;        //!Indicates whether this class can be split or not.
-   mutable Long_t     fProperty;        //!Property
-#if __cplusplus > 199711L
+#if __cplusplus >= 201103L
+   mutable std::atomic<Long_t> fProperty;        //!Property
    mutable std::atomic<Bool_t> fVersionUsed;     //!Indicates whether GetClassVersion has been called
 #else
+   mutable Long_t     fProperty;        //!Property
    mutable Bool_t     fVersionUsed;     //!Indicates whether GetClassVersion has been called
 #endif
 
    mutable Bool_t     fIsOffsetStreamerSet; //!saved remember if fOffsetStreamer has been set.
    mutable Long_t     fOffsetStreamer;  //!saved info to call Streamer
    Int_t              fStreamerType;    //!cached of the streaming method to use
-#if __cplusplus > 199711L
+#if __cplusplus >= 201103L
    mutable std::atomic<TVirtualStreamerInfo*>  fCurrentInfo;     //!cached current streamer info.
 #else
    mutable TVirtualStreamerInfo     *fCurrentInfo;     //!cached current streamer info.
@@ -185,7 +190,7 @@ private:
    void StreamerDefault(void *object, TBuffer &b, const TClass *onfile_class) const;
    
    static IdMap_t    *GetIdMap();       //Map from typeid to TClass pointer
-#if __cplusplus > 199711L 
+#if __cplusplus >= 201103L 
    static thread_local ENewType  fgCallingNew;  //Intent of why/how TClass::New() is called
    static std::atomic<Int_t>     fgClassCount;  //provides unique id for a each class
 #else
