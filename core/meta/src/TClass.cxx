@@ -1152,7 +1152,7 @@ TClass::TClass(const TClass& cl) :
   fContextMenuTitle(cl.fContextMenuTitle),
   fTypeInfo(cl.fTypeInfo),
   fShowMembers(cl.fShowMembers),
-  fInterShowMembers(cl.fInterShowMembers),
+  fInterShowMembers(0),
   fStreamer(cl.fStreamer),
   fSharedLibs(cl.fSharedLibs),
   fIsA(cl.fIsA),
@@ -1169,7 +1169,7 @@ TClass::TClass(const TClass& cl) :
   fStreamerFunc(cl.fStreamerFunc),
   fSizeof(cl.fSizeof),
   fCanSplit(cl.fCanSplit),
-  fProperty(cl.fProperty),
+  fProperty(0),
   fVersionUsed(),
   fIsOffsetStreamerSet(cl.fIsOffsetStreamerSet),
   fOffsetStreamer(cl.fOffsetStreamer),
@@ -1276,7 +1276,11 @@ TClass::~TClass()
 
    fIsOffsetStreamerSet=kFALSE;
 
+#if __cplusplus >= 201103L
+   if (fInterShowMembers) gCint->CallFunc_Delete(fInterShowMembers.load());
+#else
    if (fInterShowMembers) gCint->CallFunc_Delete(fInterShowMembers);
+#endif
 
    if ( fIsA ) delete fIsA;
 
@@ -1863,20 +1867,24 @@ Bool_t TClass::CallShowMembers(void* obj, TMemberInspector &insp,
          //
 
          if (!fInterShowMembers) {
-            CallFunc_t* ism = gCint->CallFunc_Factory();
-            Long_t offset = 0;
             
             R__LOCKGUARD2(gCINTMutex);
-            gCint->CallFunc_SetFuncProto(ism,fClassInfo,"ShowMembers", "TMemberInspector&", &offset);
-            if (fIsOffsetStreamerSet && offset != fOffsetStreamer) {
-               Error("CallShowMembers", "Logic Error: offset for Streamer() and ShowMembers() differ!");
-               fInterShowMembers = 0;
-               return kFALSE;
-            }
+	    if(!fInterShowMembers) {
+	       CallFunc_t* ism = gCint->CallFunc_Factory();
+	       Long_t offset = 0;
 
-            fInterShowMembers = ism;
+	       gCint->CallFunc_SetFuncProto(ism,fClassInfo,"ShowMembers", "TMemberInspector&", &offset);
+	       if (fIsOffsetStreamerSet && offset != fOffsetStreamer) {
+		  Error("CallShowMembers", "Logic Error: offset for Streamer() and ShowMembers() differ!");
+		  fInterShowMembers = 0;
+		  return kFALSE;
+	       }
+	      
+	       fInterShowMembers = ism;
+	    }
          }
-         if (!gCint->CallFunc_IsValid(fInterShowMembers)) {
+	 void* interShowMembers = fInterShowMembers;
+         if (!gCint->CallFunc_IsValid(interShowMembers)) {
             if (strcmp(GetName(), "string") == 0) {
                // For std::string we know that we do not have a ShowMembers
                // function and that it's okay.
@@ -1887,10 +1895,10 @@ Bool_t TClass::CallShowMembers(void* obj, TMemberInspector &insp,
             return kFALSE;
          } else {
             R__LOCKGUARD2(gCINTMutex);
-            gCint->CallFunc_ResetArg(fInterShowMembers);
-            gCint->CallFunc_SetArg(fInterShowMembers,(Long_t) &insp);
+            gCint->CallFunc_ResetArg(interShowMembers);
+            gCint->CallFunc_SetArg(interShowMembers,(Long_t) &insp);
             void* address = (void*) (((Long_t) obj) + fOffsetStreamer);
-            gCint->CallFunc_Exec((CallFunc_t*)fInterShowMembers,address);
+            gCint->CallFunc_Exec((CallFunc_t*)interShowMembers,address);
             return kTRUE;
          }
       } else if (TVirtualStreamerInfo* sinfo = GetStreamerInfo()) {
@@ -3982,6 +3990,8 @@ void *TClass::New(ENewType defConstructor) const
       // Register the object for special handling in the destructor.
       if (p) {
          RegisterAddressInRepository("New",p,this);
+      } else {
+	Error("New", "Failed to construct class '%s' using streamer info", GetName());
       }
    } else {
       Error("New", "This cannot happen!");
@@ -4786,8 +4796,6 @@ Long_t TClass::Property() const
 
    if (fClassInfo) {
 
-      kl->fProperty = gCint->ClassInfo_Property(fClassInfo);
-
       if (!gCint->ClassInfo_HasMethod(fClassInfo,"Streamer") ||
           !gCint->ClassInfo_IsValidMethod(fClassInfo,"Streamer","TBuffer&",&dummy) ) {
 
@@ -4815,6 +4823,9 @@ Long_t TClass::Property() const
          kl->fStreamerType  = kExternal;
          kl->fStreamerImpl  = &TClass::StreamerExternal;
       }
+      //must set this last since other threads may read fProperty
+      // and think all test bits have been properly set
+      kl->fProperty = gCint->ClassInfo_Property(fClassInfo);
 
    } else {
 
