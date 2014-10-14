@@ -12,6 +12,7 @@
 #include "TBaseClass.h"
 #include "TClass.h"
 #include "TInterpreter.h"
+#include "TVirtualMutex.h"
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
@@ -61,7 +62,8 @@ void TBaseClass::Browse(TBrowser *b)
 TClass *TBaseClass::GetClassPointer(Bool_t load)
 {
    // Get pointer to the base class TClass.
-
+   
+   R__LOCKGUARD(gCINTMutex);
    if (!fClassPtr) fClassPtr = TClass::GetClass(fName, load);
    return fClassPtr;
 }
