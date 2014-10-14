@@ -2247,6 +2247,15 @@ static TConfiguredAction GetCollectionWriteAction(TVirtualStreamerInfo *info, TS
    return TConfiguredAction();
 }
 
+namespace {
+  class SetCompiled {
+  private:
+    TStreamerInfo* fInfo;
+  public:
+    SetCompiled(TStreamerInfo* iInfo): fInfo(iInfo) {}
+    ~SetCompiled() { fInfo->SetBit(TStreamerInfo::kIsCompiled); }
+  };
+}
 
 //______________________________________________________________________________
 void TStreamerInfo::Compile()
@@ -2300,7 +2309,7 @@ void TStreamerInfo::Compile()
    fOffset = new Int_t[ndata+1];
    fType   = new Int_t[ndata+1];
 
-   SetBit(kIsCompiled);
+   SetCompiled setCompiledWhenFinished(this);
    if (!fReadObjectWise) fReadObjectWise = new TStreamerInfoActions::TActionSequence(this,ndata);
    if (!fWriteObjectWise) fWriteObjectWise = new TStreamerInfoActions::TActionSequence(this,ndata);
 

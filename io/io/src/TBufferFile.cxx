@@ -3684,10 +3684,14 @@ Int_t TBufferFile::ReadClassBuffer(const TClass *cl, void *pointer, Int_t versio
             return 0;            
          }
       } else if (!sinfo->IsCompiled()) {
-         // Streamer info has not been compiled, but exists.
-         // Therefore it was read in from a file and we have to do schema evolution.
-         const_cast<TClass*>(cl)->BuildRealData(pointer);
-         sinfo->BuildOld();
+	 //See if another thread beat us to it
+         R__LOCKGUARD(gCINTMutex);
+	 if(!sinfo->IsCompiled()) {
+	    // Streamer info has not been compiled, but exists.
+	    // Therefore it was read in from a file and we have to do schema evolution.
+	    const_cast<TClass*>(cl)->BuildRealData(pointer);
+	    sinfo->BuildOld();
+	 }
       }
    }
 
@@ -3830,8 +3834,12 @@ Int_t TBufferFile::WriteClassBuffer(const TClass *cl, void *pointer)
 	 sinfo->Build();
       }
    } else if (!sinfo->IsCompiled()) {
-      const_cast<TClass*>(cl)->BuildRealData(pointer);
-      sinfo->BuildOld();
+      //see if another thread beat us to it
+      R__LOCKGUARD(gCINTMutex);
+      if(!sinfo->IsCompiled()) {
+	const_cast<TClass*>(cl)->BuildRealData(pointer);
+	sinfo->BuildOld();
+      }
    }
 
    //write the class version number and reserve space for the byte count
