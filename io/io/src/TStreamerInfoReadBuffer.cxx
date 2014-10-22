@@ -75,7 +75,7 @@
          f[j] = new name[*l];                   \
          b.ReadFastArray(f[j],*l);              \
       }                                         \
-      else for(j=0;j<compinfo[i]->fLength;j++) {  \
+      else for(j=0;j<fLength[i];j++) {         \
         delete [] f[j];                        \
         f[j] = 0;                              \
      }                                         \
