@@ -907,6 +907,7 @@ TObject *TROOT::FindObjectAnyFile(const char *name) const
 {
    // Scan the memory lists of all files for an object with name
 
+   R__LOCKGUARD(gROOTMutex);
    TDirectory *d;
    TIter next(GetListOfFiles());
    while ((d = (TDirectory*)next())) {
@@ -1092,6 +1093,7 @@ TFile *TROOT::GetFile(const char *name) const
 {
    // Return pointer to file with name.
 
+   R__LOCKGUARD(gROOTMutex);
    return (TFile*)GetListOfFiles()->FindObject(name);
 }
 
