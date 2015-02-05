@@ -309,7 +309,7 @@ Int_t TAxis::FindBin(const char *label)
    if (!fLabels) {
       if (!fParent) return -1;
       fLabels = new THashList(1,1);
-      SetCanExtend(kTRUE);
+      // SetCanExtend(kTRUE);
       SetAlphanumeric(kTRUE);
       if (fXmax <= fXmin) {
          //L.M. Dec 2010 in case of no min and max specified use 0 ->NBINS
@@ -330,7 +330,7 @@ Int_t TAxis::FindBin(const char *label)
       }
       else {
          Info("FindBin","Label %s not in the list will be added to the histogram",label);
-         SetCanExtend(kTRUE);
+         // SetCanExtend(kTRUE);
          SetAlphanumeric(kTRUE);
       }
    }
@@ -782,7 +782,7 @@ void TAxis::SetBinLabel(Int_t bin, const char *label)
    // check for Alphanumeric case (labels for each bin)
    if (fLabels->GetSize() == fNbins) {
       SetAlphanumeric(kTRUE);
-      SetCanExtend(kTRUE);
+      // SetCanExtend(kTRUE);
    }
 }
 
