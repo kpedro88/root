@@ -302,6 +302,7 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname) const
    }
 
    R__LOCKGUARD(gInterpreterMutex);
+
    if (fType) {
       const TypedefType *TT = llvm::dyn_cast<TypedefType>(fType);
       if (TT) {
@@ -352,6 +353,7 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
    }
 
    R__LOCKGUARD(gInterpreterMutex);
+
    if (fType) {
       const TypedefType *TT = llvm::dyn_cast<TypedefType>(fType);
       if (TT) {
@@ -1006,7 +1008,7 @@ void *TClingClassInfo::New(const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt) co
          //      FullyQualifiedName(fDecl).c_str());
          return 0;
       }
-   }
+   } // End of Lock section.
    void* obj = 0;
    TClingCallFunc cf(fInterp,normCtxt);
    obj = cf.ExecDefaultConstructor(this, /*address=*/0, /*nary=*/0);
@@ -1033,8 +1035,10 @@ void *TClingClassInfo::New(int n, const ROOT::TMetaUtils::TNormalizedCtxt &normC
             FullyQualifiedName(fDecl).c_str());
       return 0;
    }
+
    {
       R__LOCKGUARD(gInterpreterMutex);
+
       const CXXRecordDecl* RD = dyn_cast<CXXRecordDecl>(fDecl);
       if (!RD) {
          Error("TClingClassInfo::New(n)", "This is a namespace!: %s",
@@ -1048,7 +1052,7 @@ void *TClingClassInfo::New(int n, const ROOT::TMetaUtils::TNormalizedCtxt &normC
          //      FullyQualifiedName(fDecl).c_str());
          return 0;
       }
-   }
+   } // End of Lock section.
    void* obj = 0;
    TClingCallFunc cf(fInterp,normCtxt);
    obj = cf.ExecDefaultConstructor(this, /*address=*/0,
@@ -1093,7 +1097,7 @@ void *TClingClassInfo::New(int n, void *arena, const ROOT::TMetaUtils::TNormaliz
          //      FullyQualifiedName(fDecl).c_str());
          return 0;
       }
-   }
+   } // End of Lock section
    void* obj = 0;
    TClingCallFunc cf(fInterp,normCtxt);
    // Note: This will always return arena.
@@ -1118,6 +1122,7 @@ void *TClingClassInfo::New(void *arena, const ROOT::TMetaUtils::TNormalizedCtxt 
    }
    {
       R__LOCKGUARD(gInterpreterMutex);
+
       const CXXRecordDecl* RD = dyn_cast<CXXRecordDecl>(fDecl);
       if (!RD) {
          Error("TClingClassInfo::New(arena)", "This is a namespace!: %s",
@@ -1131,7 +1136,7 @@ void *TClingClassInfo::New(void *arena, const ROOT::TMetaUtils::TNormalizedCtxt 
          //      FullyQualifiedName(fDecl).c_str());
          return 0;
       }
-   }
+   } // End of Locked section.
    void* obj = 0;
    TClingCallFunc cf(fInterp,normCtxt);
    // Note: This will always return arena.
