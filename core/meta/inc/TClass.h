@@ -227,10 +227,11 @@ private:
    mutable std::atomic<Long_t> fProperty; //!Property
    mutable Long_t     fClassProperty;     //!C++ Property of the class (is abstract, has virtual table, etc.)
 
-           Bool_t     fHasRootPcmInfo : 1;      //!Whether info was loaded from a root pcm.
-   mutable Bool_t     fCanLoadClassInfo : 1;    //!Indicates whether the ClassInfo is supposed to be available.
-   mutable Bool_t     fIsOffsetStreamerSet : 1; //!saved remember if fOffsetStreamer has been set.
-   mutable std::atomic<Bool_t> fVersionUsed;     //!Indicates whether GetClassVersion has been called
+           // fHasRootPcmInfo needs to be atomic as long as GetListOfBases needs to modify it.
+           std::atomic<Bool_t> fHasRootPcmInfo;      //!Whether info was loaded from a root pcm.
+   mutable std::atomic<Bool_t> fCanLoadClassInfo;    //!Indicates whether the ClassInfo is supposed to be available.
+   mutable std::atomic<Bool_t> fIsOffsetStreamerSet; //!saved remember if fOffsetStreamer has been set.
+   mutable std::atomic<Bool_t> fVersionUsed;         //!Indicates whether GetClassVersion has been called
 
    mutable Long_t     fOffsetStreamer;  //!saved info to call Streamer
    Int_t              fStreamerType;    //!cached of the streaming method to use
@@ -281,7 +282,7 @@ private:
    static TDeclNameRegistry fNoInfoOrEmuOrFwdDeclNameRegistry; // Store the decl names of the forwardd and no info instances
    static Bool_t HasNoInfoOrEmuOrFwdDeclaredDecl(const char*);
 
-   // Internal status bits
+   // Internal status bits, set and reset only during initialization and thus under the protection of the global lock.
    enum { kLoading = BIT(14), kUnloading = BIT(14) };
    // Internal streamer type.
    enum EStreamerType {kDefault=0, kEmulatedStreamer=1, kTObject=2, kInstrumented=4, kForeign=8, kExternal=16};

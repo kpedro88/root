@@ -2037,11 +2037,11 @@ void TClass::CalculateStreamerOffset() const
       // gets allocated on the heap and not in the mapped file.
 
       TMmallocDescTemp setreset;
-      fIsOffsetStreamerSet = kTRUE;
       fOffsetStreamer = const_cast<TClass*>(this)->GetBaseClassOffsetRecurse(TObject::Class());
       if (fStreamerType == kTObject) {
          fStreamerImpl = &TClass::StreamerTObjectInitialized;
       }
+      fIsOffsetStreamerSet = kTRUE;
    }
 }
 
@@ -3285,13 +3285,22 @@ TList *TClass::GetListOfBases()
    if (!fBase) {
       if (fCanLoadClassInfo) {
          if (fState == kHasTClassInit) {
+
+            R__LOCKGUARD(gInterpreterMutex);
+            // NOTE: Add test to prevent redo if another thread has already done the work.
+            // if (!fHasRootPcmInfo) {
+
             // The bases are in our ProtoClass; we don't need the class info.
             TProtoClass *proto = TClassTable::GetProtoNorm(GetName());
             if (proto && proto->FillTClass(this)) {
+               // Not sure this code is still needed
+               // R__ASSERT(kFALSE);
+
                fHasRootPcmInfo = kTRUE;
             }
          }
-         if (!fHasRootPcmInfo) {
+         // We test again on fCanLoadClassInfo has another thread may have executed it.
+         if (!fHasRootPcmInfo && !fCanLoadClassInfo) {
             LoadClassInfo();
          }
       }
@@ -3329,9 +3338,15 @@ TList *TClass::GetListOfDataMembers(Bool_t load /* = kTRUE */)
 
    if (!fData) {
       if (fCanLoadClassInfo && fState == kHasTClassInit) {
+         // NOTE: Add test to prevent redo if another thread has already done the work.
+         // if (!fHasRootPcmInfo) {
+
          // The members are in our ProtoClass; we don't need the class info.
          TProtoClass *proto = TClassTable::GetProtoNorm(GetName());
          if (proto && proto->FillTClass(this)) {
+            // Not sure this code is still needed
+            // R__ASSERT(kFALSE);
+
             fHasRootPcmInfo = kTRUE;
             return fData;
          }
@@ -3885,7 +3900,7 @@ TMethod *TClass::GetMethodAny(const char *method)
    // of the class.
 
    if (!HasInterpreterInfo()) return 0;
-   return (TMethod*) GetListOfMethods()->FindObject(method);
+   return (TMethod*) GetMethodList()->FindObject(method);
 }
 
 //______________________________________________________________________________
@@ -5219,9 +5234,11 @@ void TClass::LoadClassInfo() const
    // Try to load the classInfo (it may require parsing the header file
    // and/or loading data from the clang pcm).
 
-   R__ASSERT(fCanLoadClassInfo);
-
    R__LOCKGUARD(gInterpreterMutex);
+
+   // If another thread executed LoadClassInfo at about the same time
+   // as this thread return early since the work was done.
+   if (!fCanLoadClassInfo) return;
 
    gInterpreter->AutoParse(GetName());
    if (!fClassInfo) gInterpreter->SetClassInfo(const_cast<TClass*>(this));   // sets fClassInfo pointer
@@ -5465,10 +5482,10 @@ Long_t TClass::Property() const
          kl->fStreamerType  = kExternal;
          kl->fStreamerImpl  = &TClass::StreamerExternal;
       }
-      //must set this last since other threads may read fProperty
-      // and think all test bits have been properly set
-      kl->fProperty = gCling->ClassInfo_Property(fClassInfo);
       kl->fClassProperty = gCling->ClassInfo_ClassProperty(GetClassInfo());
+      // Must set this last since other threads may read fProperty
+      // and think all test bits have been properly set.
+      kl->fProperty = gCling->ClassInfo_Property(fClassInfo);
 
    } else {
 
@@ -5479,6 +5496,8 @@ Long_t TClass::Property() const
 
       kl->fStreamerType |= kEmulatedStreamer;
       kl->SetStreamerImpl();
+      // fProperty was *not* set so that it can be forced to be recalculated
+      // next time.
       return 0;
    }
 
