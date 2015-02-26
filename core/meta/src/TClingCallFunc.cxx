@@ -2219,29 +2219,26 @@ void *TClingCallFunc::ExecDefaultConstructor(const TClingClassInfo *info, void *
       Error("TClingCallFunc::ExecDefaultConstructor", "Invalid class info!");
       return 0;
    }
+   const Decl *D = info->GetDecl();
+   //if (!info->HasDefaultConstructor()) {
+   //   // FIXME: We might have a ROOT ioctor, we might
+   //   //        have to check for that here.
+   //   Error("TClingCallFunc::ExecDefaultConstructor",
+   //         "Class has no default constructor: %s",
+   //         info->Name());
+   //   return 0;
+   //}
+   map<const Decl *, void *>::iterator I = gCtorWrapperStore.find(D);
    tcling_callfunc_ctor_Wrapper_t wrapper = 0;
-   {
-      R__LOCKGUARD(gInterpreterMutex);
-      const Decl *D = info->GetDecl();
-      //if (!info->HasDefaultConstructor()) {
-      //   // FIXME: We might have a ROOT ioctor, we might
-      //   //        have to check for that here.
-      //   Error("TClingCallFunc::ExecDefaultConstructor",
-      //         "Class has no default constructor: %s",
-      //         info->Name());
-      //   return 0;
-      //}
-      map<const Decl *, void *>::iterator I = gCtorWrapperStore.find(D);
-      if (I != gCtorWrapperStore.end()) {
-         wrapper = (tcling_callfunc_ctor_Wrapper_t) I->second;
-      } else {
-         wrapper = make_ctor_wrapper(info);
-      }
-      if (!wrapper) {
-         Error("TClingCallFunc::ExecDefaultConstructor",
-               "Called with no wrapper, not implemented!");
-         return 0;
-      }
+   if (I != gCtorWrapperStore.end()) {
+      wrapper = (tcling_callfunc_ctor_Wrapper_t) I->second;
+   } else {
+      wrapper = make_ctor_wrapper(info);
+   }
+   if (!wrapper) {
+      Error("TClingCallFunc::ExecDefaultConstructor",
+            "Called with no wrapper, not implemented!");
+      return 0;
    }
    void *obj = 0;
    (*wrapper)(&obj, address, nary);
@@ -2255,21 +2252,18 @@ void TClingCallFunc::ExecDestructor(const TClingClassInfo *info, void *address /
       Error("TClingCallFunc::ExecDestructor", "Invalid class info!");
       return;
    }
+   const Decl *D = info->GetDecl();
+   map<const Decl *, void *>::iterator I = gDtorWrapperStore.find(D);
    tcling_callfunc_dtor_Wrapper_t wrapper = 0;
-   {
-      R__LOCKGUARD(gInterpreterMutex);
-      const Decl *D = info->GetDecl();
-      map<const Decl *, void *>::iterator I = gDtorWrapperStore.find(D);
-      if (I != gDtorWrapperStore.end()) {
-         wrapper = (tcling_callfunc_dtor_Wrapper_t) I->second;
-      } else {
-         wrapper = make_dtor_wrapper(info);
-      }
-      if (!wrapper) {
-         Error("TClingCallFunc::ExecDestructor",
-               "Called with no wrapper, not implemented!");
-         return;
-      }
+   if (I != gDtorWrapperStore.end()) {
+      wrapper = (tcling_callfunc_dtor_Wrapper_t) I->second;
+   } else {
+      wrapper = make_dtor_wrapper(info);
+   }
+   if (!wrapper) {
+      Error("TClingCallFunc::ExecDestructor",
+            "Called with no wrapper, not implemented!");
+      return;
    }
    (*wrapper)(address, nary, withFree);
 }
