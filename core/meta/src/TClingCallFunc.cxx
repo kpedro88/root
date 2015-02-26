@@ -2425,10 +2425,7 @@ void TClingCallFunc::SetFunc(const TClingClassInfo *info, const char *method, co
 {
    fWrapper = 0;
    delete fMethod;
-   {
-     R__LOCKGUARD(gInterpreterMutex);
-     fMethod = new TClingMethodInfo(fInterp);
-   }
+   fMethod = new TClingMethodInfo(fInterp);
    if (poffset) {
       *poffset = 0L;
    }
@@ -2457,10 +2454,7 @@ void TClingCallFunc::SetFunc(const TClingMethodInfo *info)
 {
    fWrapper = 0;
    delete fMethod;
-   {
-     R__LOCKGUARD(gInterpreterMutex);
-     fMethod = new TClingMethodInfo(*info);
-   }
+   fMethod = new TClingMethodInfo(*info);
    ResetArg();
    if (!fMethod->IsValid()) {
       return;
@@ -2480,10 +2474,7 @@ void TClingCallFunc::SetFuncProto(const TClingClassInfo *info, const char *metho
 {
    fWrapper = 0;
    delete fMethod;
-   {
-      R__LOCKGUARD(gInterpreterMutex);
-      fMethod = new TClingMethodInfo(fInterp);
-   }
+   fMethod = new TClingMethodInfo(fInterp);
    if (poffset) {
       *poffset = 0L;
    }
@@ -2513,10 +2504,7 @@ void TClingCallFunc::SetFuncProto(const TClingClassInfo *info, const char *metho
                                   EFunctionMatchMode mode/*=kConversionMatch*/)
 {
    delete fMethod;
-   {
-      R__LOCKGUARD(gInterpreterMutex);
-      fMethod = new TClingMethodInfo(fInterp);
-   }
+   fMethod = new TClingMethodInfo(fInterp);
    if (poffset) {
       *poffset = 0L;
    }
