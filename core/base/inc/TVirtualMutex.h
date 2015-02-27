@@ -92,7 +92,6 @@ public:
 #if defined (_REENTRANT) || defined (WIN32)
 
 #define R__LOCKGUARD(mutex) TLockGuard _R__UNIQUE_(R__guard)(mutex)
-#define R__LOCKGUARD_NAMED(name,mutex) TLockGuard name(mutex)
 #define R__LOCKGUARD2(mutex)                             \
    if (gGlobalMutex && !mutex) {                         \
       gGlobalMutex->Lock();                              \
