@@ -107,7 +107,7 @@ void RooAbsStudy::storeDetailedOutput(TNamed& object)
       //cout << "RooAbsStudy::ctor() detailData name = " << _detailData->GetName() << endl ;
     }
 
-    object.SetName(Form("%s_detailed_data_%d",GetName(),_detailData->GetSize())) ;    
+    object.SetName(TString::Format("%s_detailed_data_%d",GetName(),_detailData->GetSize())) ;    
     //cout << "storing detailed data with name " << object.GetName() << endl ;
     _detailData->Add(&object) ;
   } else {
