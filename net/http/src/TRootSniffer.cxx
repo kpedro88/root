@@ -32,6 +32,7 @@
 #include "TUrl.h"
 #include "TImage.h"
 #include "RZip.h"
+#include "TVirtualMutex.h"
 #include "TRootSnifferStore.h"
 #include "THttpCallArg.h"
 
@@ -1693,6 +1694,7 @@ TObject *TRootSniffer::GetItem(const char *fullname, TFolder *&parent, Bool_t fo
       httpfold = topf->AddFolder("http", "ROOT http server");
       httpfold->SetBit(kCanDelete);
       // register top folder in list of cleanups
+      R__LOCKGUARD2(gROOTMutex);
       gROOT->GetListOfCleanups()->Add(httpfold);
    }
 
