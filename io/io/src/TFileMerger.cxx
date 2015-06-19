@@ -154,7 +154,7 @@ Bool_t TFileMerger::AddFile(const char *url, Bool_t cpProgress)
    }
 
    // We want gDirectory untouched by anything going on here
-   TDirectory::TContext ctx(0);
+   TDirectory::TContext ctxt;
 
    if (fLocal) {
       TUUID uuid;
@@ -230,7 +230,7 @@ Bool_t TFileMerger::AddFile(TFile *source, Bool_t own, Bool_t cpProgress)
    TString localcopy;
 
    // We want gDirectory untouched by anything going on here
-   TDirectory::TContext ctx(0);
+   TDirectory::TContext ctxt;
    if (fLocal && !source->InheritsFrom(TMemFile::Class())) {
       TUUID uuid;
       localcopy.Form("file:%s/ROOTMERGE-%s.root", gSystem->TempDirectory(), uuid.AsString());
@@ -307,7 +307,7 @@ Bool_t TFileMerger::OutputFile(const char *outputfile, const char *mode, Int_t c
    fOutputFilename = outputfile;
 
    // We want gDirectory untouched by anything going on here
-   TDirectory::TContext ctx(0);
+   TDirectory::TContext ctxt;
    if (!(fOutputFile = TFile::Open(outputfile, mode, "", compressionLevel)) || fOutputFile->IsZombie()) {
       Error("OutputFile", "cannot open the MERGER output file %s", fOutputFilename.Data());
       return kFALSE;
@@ -824,7 +824,7 @@ Bool_t TFileMerger::PartialMerge(Int_t in_type)
 
    fOutputFile->SetBit(kMustCleanup);
 
-   TDirectory::TContext ctxt(0);
+   TDirectory::TContext ctxt;
 
    Bool_t result = kTRUE;
    Int_t type = in_type;
@@ -889,7 +889,7 @@ Bool_t TFileMerger::OpenExcessFiles()
    TObjString *url = 0;
    TString localcopy;
    // We want gDirectory untouched by anything going on here
-   TDirectory::TContext ctx(0);
+   TDirectory::TContext ctxt;
    while( nfiles < (fMaxOpenedFiles-1) && ( url = (TObjString*)next() ) ) {
       TFile *newfile = 0;
       if (fLocal) {
