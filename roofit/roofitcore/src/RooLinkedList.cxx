@@ -262,7 +262,8 @@ RooLinkedList::RooLinkedList(Int_t htsize) :
 //_____________________________________________________________________________
 RooLinkedList::RooLinkedList(const RooLinkedList& other) :
   TObject(other), _hashThresh(other._hashThresh), _size(0), _first(0), _last(0), _htableName(0), _htableLink(0), 
-  _name(other._name), _useNptr(other._useNptr)
+  _name(other._name), 
+  _useNptr(other._useNptr)
 {
   // Copy constructor
   if (!_pool) _pool = new Pool;
@@ -831,7 +832,11 @@ void RooLinkedList::Streamer(TBuffer &R__b)
       Add(arg) ;      
     }
 
+<<<<<<< HEAD
     if (v>1) {
+=======
+    if (v>1 ) {
+>>>>>>> 1926bec... Fix copy ctor of RooAbsAnaConvPdf. This problem was noticed by applying the previous patch of T. Adye in the RoolinkedList::Add to checking pointers added to the list.
       R__b >> _name ;
     }
 
@@ -845,7 +850,11 @@ void RooLinkedList::Streamer(TBuffer &R__b)
       R__b << ptr->_arg ;
       ptr = ptr->_next ;
     } 
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 1926bec... Fix copy ctor of RooAbsAnaConvPdf. This problem was noticed by applying the previous patch of T. Adye in the RoolinkedList::Add to checking pointers added to the list.
     R__b << _name ;
   }
 }
