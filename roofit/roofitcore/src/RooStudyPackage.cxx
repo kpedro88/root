@@ -37,8 +37,10 @@
 #include "TTree.h"
 #include "TDSet.h"
 #include "TFile.h"
-#include "TRandom.h"
+#include "TRandom2.h"
 #include "RooRandom.h"
+#include "TMath.h"
+#include "TEnv.h"
 
 using namespace std ;
 
@@ -158,7 +160,7 @@ void RooStudyPackage::exportData(TList* olist, Int_t seqno)
     RooLinkedList* detailedData = (*iter)->detailedData() ;
     if (detailedData && detailedData->GetSize()>0) {
 
-      detailedData->SetName(Form("%s_%d",detailedData->GetName(),seqno)) ;
+      //detailedData->SetName(Form("%s_%d",detailedData->GetName(),seqno)) ;
       cout << "registering detailed dataset " << detailedData->IsA()->GetName() << "::" 
 	   << detailedData->GetName() << " with " << detailedData->GetSize() << " elements" << endl ;
       TIterator* diter = detailedData->MakeIterator() ;
@@ -179,8 +181,23 @@ void RooStudyPackage::exportData(TList* olist, Int_t seqno)
 Int_t RooStudyPackage::initRandom()
 {
   // Choose random seed for this process
-  gRandom->SetSeed(0) ;
-  Int_t seed = gRandom->Integer(1000000) ;
+  // in case pass a definite seed to have it deterministic
+  // use also worker number
+  TRandom2 random(0); 
+  //gRandom->SetSeed(0) ;
+  Int_t seed = random.Integer(TMath::Limits<Int_t>::Max()) ;
+
+  // get worker number 
+  TString  worknumber = gEnv->GetValue("ProofServ.Ordinal","undef");
+  int iworker = -1; 
+  if (worknumber != "undef") 
+     iworker = int( worknumber.Atof()*10 + 0.1);
+
+  if (iworker >= 0)  {
+     for (int i = 0; i <= iworker; ++i ) 
+        seed = random.Integer( TMath::Limits<Int_t>::Max() ); 
+  }
+
   RooRandom::randomGenerator()->SetSeed(seed) ;
   gRandom->SetSeed(seed) ;
 
