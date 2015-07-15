@@ -832,11 +832,7 @@ void RooLinkedList::Streamer(TBuffer &R__b)
       Add(arg) ;      
     }
 
-<<<<<<< HEAD
-    if (v>1) {
-=======
     if (v>1 ) {
->>>>>>> 1926bec... Fix copy ctor of RooAbsAnaConvPdf. This problem was noticed by applying the previous patch of T. Adye in the RoolinkedList::Add to checking pointers added to the list.
       R__b >> _name ;
     }
 
@@ -849,12 +845,7 @@ void RooLinkedList::Streamer(TBuffer &R__b)
     while(ptr) {
       R__b << ptr->_arg ;
       ptr = ptr->_next ;
-    } 
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> 1926bec... Fix copy ctor of RooAbsAnaConvPdf. This problem was noticed by applying the previous patch of T. Adye in the RoolinkedList::Add to checking pointers added to the list.
+    }
     R__b << _name ;
   }
 }
