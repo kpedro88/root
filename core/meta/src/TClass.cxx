@@ -1382,10 +1382,14 @@ void TClass::Init(const char *name, Version_t cversion,
       }
       if (!fHasRootPcmInfo && gInterpreter->CheckClassInfo(fName, /* autoload = */ kTRUE)) {
          gInterpreter->SetClassInfo(this);   // sets fClassInfo pointer
-         if (!fClassInfo) {
-            if (IsZombie()) {
-               TClass::RemoveClass(this);
-               return;
+         if (fClassInfo) {
+            fCheckSum = GetCheckSum(kLatestCheckSum);
+         } else {
+            if (!fClassInfo) {
+               if (IsZombie()) {
+                  TClass::RemoveClass(this);
+                  return;
+               }
             }
          }
       }
@@ -5853,35 +5857,11 @@ UInt_t TClass::GetCheckSum(Bool_t &isvalid) const
 //______________________________________________________________________________
 UInt_t TClass::GetCheckSum(ECheckSum code, Bool_t &isvalid) const
 {
-   // Compute and/or return the class check sum.
-   //
-   // isvalid is set to false, if the function is unable to calculate the
-   // checksum.
-   //
-   // The class ckecksum is used by the automatic schema evolution algorithm
-   // to uniquely identify a class version.
-   // The check sum is built from the names/types of base classes and
-   // data members.
-   // Original algorithm from Victor Perevovchikov (perev@bnl.gov).
-   //
-   // The valid range of code is determined by ECheckSum.
-   //
-   // kNoEnum:  data members of type enum are not counted in the checksum
-   // kNoRange: return the checksum of data members and base classes, not including the ranges and array size found in comments.
-   // kWithTypeDef: use the sugared type name in the calculation.
-   //
-   // This is needed for backward compatibility.
-   //
-   // WARNING: this function must be kept in sync with TStreamerInfo::GetCheckSum.
-   // They are both used to handle backward compatibility and should both return the same values.
-   // TStreamerInfo uses the information in TStreamerElement while TClass uses the information
-   // from TClass::GetListOfBases and TClass::GetListOfDataMembers.
+   if (fCheckSum && code == kCurrentCheckSum) return fCheckSum;
 
    R__LOCKGUARD(gInterpreterMutex);
 
    isvalid = kTRUE;
-
-   if (fCheckSum && code == kCurrentCheckSum) return fCheckSum;
 
    // kCurrentCheckSum (0) is the default parameter value and should be kept
    // for backward compatibility, too be able to use the inequality checks,
@@ -5987,7 +5967,7 @@ UInt_t TClass::GetCheckSum(ECheckSum code, Bool_t &isvalid) const
          }
       }/*EndMembLoop*/
    }
-   if (code==kLatestCheckSum) fCheckSum = id;
+   //if (code==kLatestCheckSum) fCheckSum = id;
    return id;
 }
 
@@ -6589,6 +6569,7 @@ void TClass::RegisterStreamerInfo(TVirtualStreamerInfo *info)
       fStreamerInfo->AddAtAndExpand(info, slot);
       if (fState <= kForwardDeclared) {
          fState = kEmulated;
+         if (fCheckSum==0) fCheckSum = info->GetCheckSum();
       }
    }
 }
