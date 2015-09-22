@@ -695,3 +695,16 @@ void RooAbsAnaConvPdf::printMultiline(ostream& os, Int_t contents, Bool_t verbos
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+/// Label OK'ed components with cache-and-track
+void RooAbsAnaConvPdf::setCacheAndTrackHints(RooArgSet& trackNodes)
+{
+  RooFIter citer = _convSet.fwdIterator() ;
+  RooAbsArg* carg ;
+  while ((carg=citer.next())) {
+    if (carg->canNodeBeCached()==Always) {
+      trackNodes.add(*carg) ;
+      //cout << "tracking node RooAddPdf component " << carg->IsA()->GetName() << "::" << carg->GetName() << endl ;
+    }
+  }
+}
