@@ -1395,10 +1395,16 @@ void TClass::Init(const char *name, Version_t cversion,
       }
       if (!fHasRootPcmInfo && gInterpreter->CheckClassInfo(fName, /* autoload = */ kTRUE)) {
          gInterpreter->SetClassInfo(this);   // sets fClassInfo pointer
-         if (!fClassInfo) {
-            if (IsZombie()) {
-               TClass::RemoveClass(this);
-               return;
+         if (fClassInfo) {
+            // This should be moved out of GetCheckSum itself however the last time
+            // we tried this cause problem, in particular in the end-of-process operation.
+            // fCheckSum = GetCheckSum(kLatestCheckSum);
+         } else {
+            if (!fClassInfo) {
+               if (IsZombie()) {
+                  TClass::RemoveClass(this);
+                  return;
+               }
             }
          }
       }
@@ -2582,8 +2588,9 @@ Int_t TClass::GetBaseClassOffsetRecurse(const TClass *cl)
 
 Int_t TClass::GetBaseClassOffset(const TClass *toBase, void *address, bool isDerivedObject)
 {
-   R__LOCKGUARD(gInterpreterMutex);
    // Warning("GetBaseClassOffset","Requires the use of fClassInfo for %s to %s",GetName(),toBase->GetName());
+
+   if (this == toBase) return 0;
 
    if ((!address /* || !has_virtual_base */) &&
        (!HasInterpreterInfoInMemory() || !toBase->HasInterpreterInfoInMemory())) {
@@ -5493,8 +5500,15 @@ void TClass::PostLoadCheck()
 
 Long_t TClass::Property() const
 {
+   // Check if we can return without taking the lock,
+   // this is valid since fProperty is atomic and set as
+   // the last operation before return.
+   if (fProperty!=(-1)) return fProperty;
+
    R__LOCKGUARD(gInterpreterMutex);
 
+   // Check if another thread set fProperty while we
+   // were waiting.
    if (fProperty!=(-1)) return fProperty;
 
    // Avoid asking about the class when it is still building
@@ -5902,11 +5916,20 @@ UInt_t TClass::GetCheckSum(Bool_t &isvalid) const
 
 UInt_t TClass::GetCheckSum(ECheckSum code, Bool_t &isvalid) const
 {
+   // fCheckSum is an atomic variable.  Also once it has
+   // transition from a zero Value it never changes.  If two
+   // thread reach past this if statement and caculated the
+   // 'kLastestCheckSum', they will by definition obtain the
+   // same value, so technically we could simply have:
+   //    if (fCheckSum && code == kCurrentCheckSum) return fCheckSum;
+   // However save a little bit of barier time by calling load()
+   // only once.
+   UInt_t currentChecksum = fCheckSum.load();
+   if (currentChecksum && code == kCurrentCheckSum) return currentChecksum;
+
    R__LOCKGUARD(gInterpreterMutex);
 
    isvalid = kTRUE;
-
-   if (fCheckSum && code == kCurrentCheckSum) return fCheckSum;
 
    // kCurrentCheckSum (0) is the default parameter value and should be kept
    // for backward compatibility, too be able to use the inequality checks,
@@ -6012,6 +6035,8 @@ UInt_t TClass::GetCheckSum(ECheckSum code, Bool_t &isvalid) const
          }
       }/*EndMembLoop*/
    }
+   // This should be moved to Initialization time however the last time
+   // we tried this cause problem, in particular in the end-of-process operation.
    if (code==kLatestCheckSum) fCheckSum = id;
    return id;
 }
@@ -6625,6 +6650,7 @@ void TClass::RegisterStreamerInfo(TVirtualStreamerInfo *info)
       fStreamerInfo->AddAtAndExpand(info, slot);
       if (fState <= kForwardDeclared) {
          fState = kEmulated;
+         if (fCheckSum==0 && slot==fClassVersion) fCheckSum = info->GetCheckSum();
       }
    }
 }
