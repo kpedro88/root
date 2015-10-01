@@ -94,7 +94,6 @@ public:
    const char    *GetMethodName() const { return fMethod.Data(); }
    const char    *GetParams() const { return fParams.Data(); }
    const char    *GetProto() const { return fProto.Data(); }
-   CallFunc_t    *GetCallFunc() const { return fFunc; }
    EReturnType    ReturnType();
 
    void     SetParamPtrs(void *paramArr, Int_t nparam = -1);
@@ -126,8 +125,6 @@ public:
    void     Execute(const char *params, Long_t &retLong);
    void     Execute(Double_t &retDouble);
    void     Execute(const char *params, Double_t &retDouble);
-
-   void     Execute(void *objAddress, const void* args[], int nargs, void *ret = 0);
 
    ClassDef(TMethodCall,0)  //Method calling interface
 };

@@ -1382,16 +1382,10 @@ void TClass::Init(const char *name, Version_t cversion,
       }
       if (!fHasRootPcmInfo && gInterpreter->CheckClassInfo(fName, /* autoload = */ kTRUE)) {
          gInterpreter->SetClassInfo(this);   // sets fClassInfo pointer
-         if (fClassInfo) {
-            // This should be moved out of GetCheckSum itself however the last time
-            // we tried this cause problem, in particular in the end-of-process operation.
-            // fCheckSum = GetCheckSum(kLatestCheckSum);
-         } else {
-            if (!fClassInfo) {
-               if (IsZombie()) {
-                  TClass::RemoveClass(this);
-                  return;
-               }
+         if (!fClassInfo) {
+            if (IsZombie()) {
+               TClass::RemoveClass(this);
+               return;
             }
          }
       }
@@ -2567,9 +2561,12 @@ Int_t TClass::GetBaseClassOffsetRecurse(const TClass *cl)
 //______________________________________________________________________________
 Int_t TClass::GetBaseClassOffset(const TClass *toBase, void *address, bool isDerivedObject)
 {
-   // Warning("GetBaseClassOffset","Requires the use of fClassInfo for %s to %s",GetName(),toBase->GetName());
+   // Return data member offset to the base class "cl".
+   // Returns -1 in case "cl" is not a base class.
+   // Takes care of multiple inheritance.
 
-   if (this == toBase) return 0;
+   R__LOCKGUARD(gInterpreterMutex);
+   // Warning("GetBaseClassOffset","Requires the use of fClassInfo for %s to %s",GetName(),toBase->GetName());
 
    if ((!address /* || !has_virtual_base */) &&
        (!HasInterpreterInfoInMemory() || !toBase->HasInterpreterInfoInMemory())) {
@@ -5461,15 +5458,20 @@ void TClass::PostLoadCheck()
 //______________________________________________________________________________
 Long_t TClass::Property() const
 {
-   // Check if we can return without taking the lock,
-   // this is valid since fProperty is atomic and set as
-   // the last operation before return.
-   if (fProperty!=(-1)) return fProperty;
+   // Set TObject::fBits and fStreamerType to cache information about the
+   // class.  The bits are
+   //    kIsTObject : the class inherits from TObject
+   //    kStartWithTObject:  TObject is the left-most class in the inheritance tree
+   //    kIsForeign : the class doe not have a Streamer method
+   // The value of fStreamerType are
+   //    kTObject : the class inherits from TObject
+   //    kForeign : the class does not have a Streamer method
+   //    kInstrumented: the class does have a Streamer method
+   //    kExternal: the class has a free standing way of streaming itself
+   //    kEmulatedStreamer: the class is missing its shared library.
 
    R__LOCKGUARD(gInterpreterMutex);
 
-   // Check if another thread set fProperty while we
-   // were waiting.
    if (fProperty!=(-1)) return fProperty;
 
    // Avoid asking about the class when it is still building
@@ -5853,20 +5855,35 @@ UInt_t TClass::GetCheckSum(Bool_t &isvalid) const
 //______________________________________________________________________________
 UInt_t TClass::GetCheckSum(ECheckSum code, Bool_t &isvalid) const
 {
-   // fCheckSum is an atomic variable.  Also once it has
-   // transition from a zero Value it never changes.  If two
-   // thread reach past this if statement and caculated the
-   // 'kLastestCheckSum', they will by definition obtain the
-   // same value, so technically we could simply have:
-   //    if (fCheckSum && code == kCurrentCheckSum) return fCheckSum;
-   // However save a little bit of barier time by calling load()
-   // only once.
-   UInt_t currentChecksum = fCheckSum.load();
-   if (currentChecksum && code == kCurrentCheckSum) return currentChecksum;
+   // Compute and/or return the class check sum.
+   //
+   // isvalid is set to false, if the function is unable to calculate the
+   // checksum.
+   //
+   // The class ckecksum is used by the automatic schema evolution algorithm
+   // to uniquely identify a class version.
+   // The check sum is built from the names/types of base classes and
+   // data members.
+   // Original algorithm from Victor Perevovchikov (perev@bnl.gov).
+   //
+   // The valid range of code is determined by ECheckSum.
+   //
+   // kNoEnum:  data members of type enum are not counted in the checksum
+   // kNoRange: return the checksum of data members and base classes, not including the ranges and array size found in comments.
+   // kWithTypeDef: use the sugared type name in the calculation.
+   //
+   // This is needed for backward compatibility.
+   //
+   // WARNING: this function must be kept in sync with TStreamerInfo::GetCheckSum.
+   // They are both used to handle backward compatibility and should both return the same values.
+   // TStreamerInfo uses the information in TStreamerElement while TClass uses the information
+   // from TClass::GetListOfBases and TClass::GetListOfDataMembers.
 
    R__LOCKGUARD(gInterpreterMutex);
 
    isvalid = kTRUE;
+
+   if (fCheckSum && code == kCurrentCheckSum) return fCheckSum;
 
    // kCurrentCheckSum (0) is the default parameter value and should be kept
    // for backward compatibility, too be able to use the inequality checks,
@@ -5972,8 +5989,6 @@ UInt_t TClass::GetCheckSum(ECheckSum code, Bool_t &isvalid) const
          }
       }/*EndMembLoop*/
    }
-   // This should be moved to Initialization time however the last time
-   // we tried this cause problem, in particular in the end-of-process operation.
    if (code==kLatestCheckSum) fCheckSum = id;
    return id;
 }
@@ -6576,7 +6591,6 @@ void TClass::RegisterStreamerInfo(TVirtualStreamerInfo *info)
       fStreamerInfo->AddAtAndExpand(info, slot);
       if (fState <= kForwardDeclared) {
          fState = kEmulated;
-         if (fCheckSum==0 && slot==fClassVersion) fCheckSum = info->GetCheckSum();
       }
    }
 }
