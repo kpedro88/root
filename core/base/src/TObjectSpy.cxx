@@ -11,7 +11,7 @@
 
 #include "TObjectSpy.h"
 #include "TROOT.h"
-
+#include "TVirtualMutex.h"
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
@@ -54,6 +54,7 @@ TObjectSpy::~TObjectSpy()
 {
    if (fObj && fResetMustCleanupBit)
       fObj->SetBit(kMustCleanup, kFALSE);
+   R__LOCKGUARD2(gROOTMutex);
    gROOT->GetListOfCleanups()->Remove(this);
 }
 
@@ -117,6 +118,7 @@ TObjectRefSpy::~TObjectRefSpy()
 {
    if (fObj && fResetMustCleanupBit)
       fObj->SetBit(kMustCleanup, kFALSE);
+   R__LOCKGUARD2(gROOTMutex);
    gROOT->GetListOfCleanups()->Remove(this);
 }
 
