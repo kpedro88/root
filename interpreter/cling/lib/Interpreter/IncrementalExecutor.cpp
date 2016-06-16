@@ -89,7 +89,13 @@ std::unique_ptr<TargetMachine>
   std::string FeaturesStr;
 
   TargetOptions Options = TargetOptions();
+  // We have to use large code model for PowerPC because TOC and text sections
+  // can be more than 2GB apart.
+#if defined(__powerpc64__) || defined(__PPC64__) || defined(__powerpc__)
+  CodeModel::Model CMModel = CodeModel::Large;
+#else
   CodeModel::Model CMModel = CodeModel::JITDefault;
+#endif
   CodeGenOpt::Level OptLevel = CodeGenOpt::Default;
   switch (CGOpt.OptimizationLevel) {
     case 0: OptLevel = CodeGenOpt::None; break;
