@@ -23,6 +23,7 @@
 #include "TBrowser.h"
 #include "TMath.h"
 #include "TObjString.h"
+#include "TVirtualMutex.h"
 
 ClassImp(THStack)
 
@@ -120,6 +121,7 @@ THStack::THStack(const char *name, const char *title)
    fHistogram = 0;
    fMaximum   = -1111;
    fMinimum   = -1111;
+   R__LOCKGUARD2(gROOTMutex);
    gROOT->GetListOfCleanups()->Add(this);
 }
 
@@ -163,8 +165,10 @@ THStack::THStack(TH1* hist, Option_t *axis /*="x"*/,
    fHistogram = 0;
    fMaximum   = -1111;
    fMinimum   = -1111;
-   gROOT->GetListOfCleanups()->Add(this);
-
+   {
+      R__LOCKGUARD2(gROOTMutex);
+      gROOT->GetListOfCleanups()->Add(this);
+   }
    if (!axis) {
       Warning("THStack", "Need an axis.");
       return;
@@ -307,7 +311,10 @@ THStack::THStack(TH1* hist, Option_t *axis /*="x"*/,
 THStack::~THStack()
 {
 
-   gROOT->GetListOfCleanups()->Remove(this);
+   {
+      R__LOCKGUARD2(gROOTMutex);
+      gROOT->GetListOfCleanups()->Remove(this);
+   }
    if (!fHists) return;
    fHists->Clear("nodelete");
    delete fHists;
