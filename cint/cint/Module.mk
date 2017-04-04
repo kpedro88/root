@@ -216,6 +216,7 @@ IOSENUMA     := $(CINTDIRIOSEN)/iosenum.$(ARCH)
 endif
 endif
 endif
+endif
 
 # used in the main Makefile
 ALLHDRS     += $(CINTHT) $(CINTINCLUDES)
