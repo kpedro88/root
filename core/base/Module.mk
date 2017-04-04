@@ -125,6 +125,11 @@ $(call stripsrc,$(BASEDIRS)/TContextMenu.o): CXXFLAGS += -Wno-strict-aliasing
 endif
 endif
 
+ifeq ($(GCC_MAJOR),5)
+$(call stripsrc,$(BASEDIRS)/TString.o): CXXFLAGS += -Wno-strict-aliasing
+$(call stripsrc,$(BASEDIRS)/TContextMenu.o): CXXFLAGS += -Wno-strict-aliasing
+endif
+
 $(BASEDO1) $(BASEDO2): $(PCREDEP)
 $(BASEDO1) $(BASEDO2): CXXFLAGS += $(PCREINC)
 ifeq ($(ARCH),linuxicc)

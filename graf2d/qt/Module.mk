@@ -124,6 +124,10 @@ ifeq ($(subst $(GCC_MINOR),,0 1),0 1)
 $(GQTO): CXXFLAGS += -Wno-strict-overflow
 endif
 endif
+ifeq ($(GCC_MAJOR),5)
+# GCC >= 4.2
+$(GQTO): CXXFLAGS += -Wno-strict-overflow
+endif
 
 $(GQTMOC) : $(call stripsrc,$(GQTDIRS)/moc_%.cxx): $(GQTDIRI)/%.h
 	$(MAKEDIR)

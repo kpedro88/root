@@ -470,6 +470,12 @@ LIBFRTBEGIN  := $(shell $(F77) -print-file-name=libfrtbegin.a)
 F77LIBS      := $(LIBFRTBEGIN) $(F77LIBS)
 endif
 endif
+ifeq ($(GCC_MAJOR),5)
+ifeq ($(F77),g77)
+LIBFRTBEGIN  := $(shell $(F77) -print-file-name=libfrtbegin.a)
+F77LIBS      := $(LIBFRTBEGIN) $(F77LIBS)
+endif
+endif
 
 ##### Store Git SHA1 of this version #####
 

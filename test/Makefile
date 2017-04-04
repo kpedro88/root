@@ -830,3 +830,7 @@ ifeq ($(GCC_MINOR),1)
 TBenchDict.o: CXXFLAGS += -Wno-strict-aliasing
 endif
 endif
+
+ifeq ($(GCC_MAJOR),5)
+TBenchDict.o: CXXFLAGS += -Wno-strict-aliasing
+endif
