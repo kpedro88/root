@@ -450,6 +450,12 @@
 #   define ANSICPP
 #endif
 
+#ifdef __GNUC__
+#   if __GNUC__ >=5 
+#       define R__ACCESS_IN_SYMBOL
+#   endif
+#endif
+
 #ifdef __HP_aCC
 #   define R__ACC
 #   define R__VECNEWDELETE    /* supports overloading of new[] and delete[] */
@@ -477,6 +483,7 @@
 #   define R__BYTESWAP
 #   define R__ACCESS_IN_SYMBOL
 #endif
+
 
 #ifdef __SC__
 #   define SC

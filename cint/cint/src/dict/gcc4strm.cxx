@@ -1049,7 +1049,7 @@ static int G__G__stream_13_0_8(G__value* result7, G__CONST char* funcname, struc
 
 static int G__G__stream_13_0_9(G__value* result7, G__CONST char* funcname, struct G__param* libp, int hash)
 {
-      G__letint(result7, 89, (long) ((const basic_ios<char,char_traits<char> >*) G__getstructoffset())->operator void());
+  //HACK      G__letint(result7, 89, (long) ((const basic_ios<char,char_traits<char> >*) G__getstructoffset())->operator void*());
    return(1 || funcname || hash || result7 || libp) ;
 }
 
