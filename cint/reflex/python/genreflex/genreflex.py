@@ -330,7 +330,10 @@ class genreflex:
         if sys.platform == 'win32' :
           cmd  = '"%s" %s "%s" -fxml=%s %s -D__REFLEX__' %(self.gccxml, self.gccxmlopt, source, xmlfile, self.cppopt)
         else :
-          cmd  = '%s %s "%s" -fxml=%s %s -D__REFLEX__' %(self.gccxml, self.gccxmlopt, source, xmlfile, self.cppopt)
+#          cmd  = '%s %s "%s" -fxml=%s %s -D__REFLEX__' %(self.gccxml, self.gccxmlopt, source, xmlfile, self.cppopt)
+#hack in castxml command here
+          cmd = "castxml --castxml-gccxml -o "+xmlfile+' --castxml-cc-gnu `which g++` -x c++  -m64 -std=c++98 '+self.cppopt+' '+source
+#          print cmd
           if 'debug' in self.opts : print '--->> genreflex: INFO: invoking ', cmd
           if not self.quiet : print '--->> genreflex: INFO: Parsing file %s with GCC_XML' % source,
         if sys.platform == 'win32' :
