@@ -154,7 +154,7 @@ FARPROC dlsym(void *library, const char *function_name)
 #include "TListOfFunctionTemplates.h"
 #include "TFunctionTemplate.h"
 #include "ThreadLocalStorage.h"
-#include "TVirtualRWMutex.h"
+#include "TVirtualMutex.h"
 
 #include <string>
 namespace std {} using namespace std;
@@ -2398,7 +2398,7 @@ const char *TROOT::GetGitDate()
 
 void TROOT::RecursiveRemove(TObject *obj)
 {
-   R__READ_LOCKGUARD(ROOT::gCoreMutex);
+   R__LOCKGUARD2(gROOTMutex);
 
    fCleanups->RecursiveRemove(obj);
 }
