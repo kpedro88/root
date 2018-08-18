@@ -1940,7 +1940,7 @@ TStreamerInfo *TBranchElement::FindOnfileInfo(TClass *valueClass, const TObjArra
 }
 
 namespace {
-   static void GatherArtificialElements(const TObjArray &branches, TStreamerInfoActions::TIDs &ids, TString prefix, TStreamerInfo *info, Int_t offset) {
+static void GatherArtificialElements(const TObjArray &branches, TStreamerInfoActions::TIDs &ids, TString prefix, TStreamerInfo *info, Int_t offset) {
    size_t ndata = info->GetNelement();
    for (size_t i =0; i < ndata; ++i) {
       TStreamerElement *nextel = info->GetElement(i);
@@ -1960,8 +1960,9 @@ namespace {
          ename = ename.Remove(pos);
       }
 
+      TBranchElement *be = (TBranchElement*)branches.FindObject(ename);
       if (nextel->IsA() == TStreamerArtificial::Class()
-         && branches.FindObject(ename) == nullptr) {
+         && be == nullptr) {
 
          ids.push_back(i);
          ids.back().fElement = nextel;
@@ -1972,7 +1973,6 @@ namespace {
          continue;
 
       TClass *elementClass = nextel->GetClassPointer();
-      TBranchElement *be = (TBranchElement*)branches.FindObject(ename);
       if (elementClass && (!be || be->GetType() == -2)) {
          TStreamerInfo *nextinfo = nullptr;
 
@@ -1994,6 +1994,10 @@ namespace {
             }
          }
          ids.emplace_back(nextinfo, offset + nextel->GetOffset());
+         if (!onfileObject && nextinfo && nextinfo->GetNelement() && nextinfo->GetElement(0)->GetType() == TStreamerInfo::kCacheNew) {
+            onfileObject = new TVirtualArray( info->GetElement(0)->GetClassPointer(), 1 /* is that always right? */ );
+            ids.back().fNestedIDs->fOwnOnfileObject = kTRUE;
+         }
          ids.back().fNestedIDs->fOnfileObject = onfileObject;
          GatherArtificialElements(branches, ids.back().fNestedIDs->fIDs, ename + ".", nextinfo, offset + nextel->GetOffset());
          if (ids.back().fNestedIDs->fIDs.empty())
@@ -3621,7 +3625,7 @@ static void PrintElements(const TStreamerInfo *info, const TStreamerInfoActions:
       if (id >= 0)
          info->GetElement(id)->ls();
       else if (cursor.fNestedIDs) {
-         Printf("      With subobject of type %s offset = %d", cursor.fNestedIDs->fInfo->GetName(), cursor.fNestedIDs->fOffset);
+         Printf("      Within subobject of type %s offset = %d", cursor.fNestedIDs->fInfo->GetName(), cursor.fNestedIDs->fOffset);
          PrintElements(cursor.fNestedIDs->fInfo, cursor.fNestedIDs->fIDs);
       }
    }
@@ -3665,7 +3669,7 @@ void TBranchElement::Print(Option_t* option) const
             // Search for the correct version.
             localInfo = FindOnfileInfo(fClonesClass, fBranches);
          }
-         Printf("   With new ids:");
+         Printf("   With elements:");
          if (fType != 3 && fType != 4)
             localInfo->GetElement(fID)->ls();
          PrintElements(localInfo, fNewIDs);
