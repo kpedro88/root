@@ -1995,12 +1995,7 @@ void TCling::RegisterModule(const char* modulename,
       // modules such as GenVector32 because it needs to fall back to GenVector.
       ModuleWasSuccessfullyLoaded = LoadModule(ModuleName, *fInterpreter, /*Complain=*/ false);
       if (!ModuleWasSuccessfullyLoaded) {
-         // Only report if we found the module in the modulemap.
-         clang::Preprocessor &PP = TheSema.getPreprocessor();
-         clang::HeaderSearch &headerSearch = PP.getHeaderSearchInfo();
-         clang::ModuleMap &moduleMap = headerSearch.getModuleMap();
-         if (moduleMap.findModule(ModuleName))
-            Info("TCling::RegisterModule", "Module %s in modulemap failed to load.", ModuleName.c_str());
+         Info("TCling::RegisterModule", "Module %s failed to load.", ModuleName.c_str());
       }
    }
 
