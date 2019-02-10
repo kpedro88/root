@@ -1074,8 +1074,31 @@ std::string TCling::ToString(const char* type, void* obj)
 ///\returns true if the module was loaded.
 static bool LoadModule(const std::string &ModuleName, cling::Interpreter &interp, bool Complain = true)
 {
-   if (interp.loadModule(ModuleName, Complain))
-      return true;
+   clang::CompilerInstance &CI = *interp.getCI();
+
+   assert(CI.getLangOpts().Modules && "Function only relevant when C++ modules are turned on!");
+
+   clang::Preprocessor &PP = CI.getPreprocessor();
+   clang::HeaderSearch &headerSearch = PP.getHeaderSearchInfo();
+
+   cling::Interpreter::PushTransactionRAII RAII(&interp);
+   if (clang::Module *M = headerSearch.lookupModule(ModuleName, true /*AllowSearch*/, true /*AllowExtraSearch*/)) {
+      clang::IdentifierInfo *II = PP.getIdentifierInfo(M->Name);
+      SourceLocation ValidLoc = M->DefinitionLoc;
+      bool success = !CI.getSema().ActOnModuleImport(ValidLoc, ValidLoc, std::make_pair(II, ValidLoc)).isInvalid();
+      if (success) {
+         // Also make the module visible in the preprocessor to export its macros.
+         PP.makeModuleVisible(M, ValidLoc);
+         Info("TCling::LoadModule", "Module %s Loaded!", M->Name.c_str());
+         return success;
+      }
+      if (Complain) {
+         if (M->IsSystem)
+            Error("TCling::LoadModule", "Module %s failed to load", M->Name.c_str());
+         else
+            Info("TCling::LoadModule", "Module %s failed to load", M->Name.c_str());
+      }
+   }
 
    // When starting up ROOT, cling would load all modulemap files on the include
    // paths. However, in a ROOT session, it is very common to run aclic which
@@ -1996,6 +2019,8 @@ void TCling::RegisterModule(const char* modulename,
       ModuleWasSuccessfullyLoaded = LoadModule(ModuleName, *fInterpreter, /*Complain=*/ false);
       if (!ModuleWasSuccessfullyLoaded) {
          Info("TCling::RegisterModule", "Module %s failed to load.", ModuleName.c_str());
+      } else {
+         Info("TCling::RegisterModule", "Module %s Loaded!", ModuleName.c_str());
       }
    }
 
