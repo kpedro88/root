@@ -2015,7 +2015,15 @@ static void GatherArtificialElements(const TObjArray &branches, TStreamerInfoAct
             ids.back().fNestedIDs->fOwnOnfileObject = kTRUE;
          }
          ids.back().fNestedIDs->fOnfileObject = onfileObject;
-         GatherArtificialElements(branches, ids.back().fNestedIDs->fIDs, ename + ".", nextinfo, offset + nextel->GetOffset());
+         TString subprefix;
+         if (prefix.Length() && nextel->IsA() == TStreamerBase::Class()) {
+             // We skip the name of the base class if there is already a prefix.
+             // See TBranchElement::Unroll
+             subprefix = prefix;
+         } else {
+             subprefix = ename + ".";
+         }
+         GatherArtificialElements(branches, ids.back().fNestedIDs->fIDs, subprefix, nextinfo, offset + nextel->GetOffset());
          if (ids.back().fNestedIDs->fIDs.empty())
             ids.pop_back();
       }
@@ -2395,6 +2403,14 @@ TVirtualCollectionProxy* TBranchElement::GetCollectionProxy()
       } else {
          // We are not a top-level branch.
          TVirtualStreamerInfo* si = thiscast->GetInfoImp();
+         if (fCollProxy) {
+            // The GetInfo set fProxy for us, let's not
+            // redo it; the value of fCollProxy is possibly
+            // used/recorded is the actions sequences, so
+            // if we change it here, we would need to propagate
+            // the change.
+            return fCollProxy;
+         }
          TStreamerElement* se = si->GetElement(fID);
          cl = se->GetClassPointer();
       }
@@ -3515,7 +3531,7 @@ void TBranchElement::InitializeOffsets()
             //
             // Compensate for the i/o routines adding our local offset later.
             if (subBranch->fObject == 0 && localOffset == TStreamerInfo::kMissing) {
-               subBranch->SetOffset(TStreamerInfo::kMissing);
+               subBranch->SetMissing();
                // We stil need to set fBranchOffset in the case of a missing
                // element so that SetAddress is (as expected) not called
                // recursively in this case.
@@ -3649,9 +3665,17 @@ static void PrintElements(const TStreamerInfo *info, const TStreamerInfoActions:
 {
    for(auto &cursor : ids) {
       auto id = cursor.fElemID;
-      if (id >= 0)
-         info->GetElement(id)->ls();
-      else if (cursor.fNestedIDs) {
+      if (id >= 0) {
+         auto el = info->GetElement(id);
+         if (el)
+            el->ls();
+         else {
+            Error("TBranchElement::Print", "Element for id #%d not found in StreamerInfo for %s",
+                  id, info->GetName());
+            info->ls();
+            TClass::GetClass("PFTauWith")->GetStreamerInfos()->ls();
+         }
+      } else if (cursor.fNestedIDs) {
          Printf("      Within subobject of type %s offset = %d", cursor.fNestedIDs->fInfo->GetName(), cursor.fNestedIDs->fOffset);
          PrintElements(cursor.fNestedIDs->fInfo, cursor.fNestedIDs->fIDs);
       }
@@ -3707,7 +3731,8 @@ void TBranchElement::Print(Option_t* option) const
       } else if (!fNewIDs.empty() && GetInfoImp()) {
          TStreamerInfo *localInfo = GetInfoImp();
          if (fType == 3 || fType == 4) {
-            localInfo = (TStreamerInfo *)fClonesClass->GetStreamerInfo();
+            // Search for the correct version.
+            localInfo = FindOnfileInfo(fClonesClass, fBranches);
          }
          PrintElements(localInfo, fNewIDs);
          Printf("   with read actions:");
@@ -5287,7 +5312,6 @@ void TBranchElement::SetAddress(void* addr)
    // We do this only once because it depends only on
    // the type of our object, not on its address.
    if (!fInitOffsets) {
-      // R__LOCKGUARD(gInterpreterMutex);
       InitializeOffsets();
    }
 
@@ -5391,6 +5415,11 @@ void TBranchElement::SetOffset(Int_t offset)
    // We need to make sure that the Read and Write action's configuration
    // properly reflect this value.
 
+   if (offset == TVirtualStreamerInfo::kMissing) {
+       SetMissing();
+       return;
+   }
+
    if (fReadActionSequence) {
       fReadActionSequence->AddToOffset(offset - fOffset);
    }
@@ -5398,6 +5427,24 @@ void TBranchElement::SetOffset(Int_t offset)
       fFillActionSequence->AddToOffset(offset - fOffset);
    }
    fOffset = offset;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Set offset of the object (to which the data member represented by this
+/// branch belongs) inside its containing object (if any) to mark it as missing.
+
+void TBranchElement::SetMissing()
+{
+   // We need to make sure that the Read and Write action's configuration
+   // properly reflect this value.
+
+   if (fReadActionSequence) {
+      fReadActionSequence->SetMissing();
+   }
+   if (fFillActionSequence) {
+      fFillActionSequence->SetMissing();
+   }
+   fOffset = TVirtualStreamerInfo::kMissing;
 }
 
 
@@ -5419,17 +5466,21 @@ void TBranchElement::SetActionSequence(TClass *originalClass, TStreamerInfo *loc
 
    if (!isSplitNode)
       fNewIDs.erase(fNewIDs.begin());
-   else {
+
+   else if (fInitOffsets && fType != 3 && fType != 4) {
       // fObject has the address of the sub-object but the streamer action have
       // offset relative to the parent.
+
+      // Note: We skipped this for the top node of split collection because the
+      // sequence is about the content, we need to review what happens where an
+      // action related to the collection itself will land.
       TBranchElement *parent = dynamic_cast<TBranchElement*>(GetMother()->GetSubBranch(this));
-      if (fInitOffsets) {
-         auto index = parent->fBranches.IndexOf(this);
-         if (index >= 0) {
-            fReadActionSequence->AddToOffset( - parent->fBranchOffset[index] );
-         }
-      } // else it will be done by InitOffsets
-   }
+
+      auto index = parent->fBranches.IndexOf(this);
+      if (index >= 0) {
+         actionSequence->AddToOffset( - parent->fBranchOffset[index] );
+      }
+   } // else it will be done by InitOffsets
 }
 
 ////////////////////////////////////////////////////////////////////////////////
