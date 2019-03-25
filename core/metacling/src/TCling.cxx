@@ -1107,7 +1107,6 @@ static bool LoadModule(const std::string &ModuleName, cling::Interpreter &interp
    //
    // Before failing, try loading the modulemap in the current folder and try
    // loading the requested module from it.
-   Preprocessor &PP = interp.getCI()->getPreprocessor();
    FileManager& FM = PP.getFileManager();
    // FIXME: In a ROOT session we can add an include path (through .I /inc/path)
    // We should look for modulemap files there too.
