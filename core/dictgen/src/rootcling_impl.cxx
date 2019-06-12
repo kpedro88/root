@@ -2165,7 +2165,7 @@ static bool CheckModuleValid(TModuleGenerator &modGen, const std::string &resour
    headerSearch.loadTopLevelSystemModules();
 
    // Actually lookup the module on the computed module name.
-   clang::Module *module = headerSearch.lookupModule(StringRef(moduleName));
+   clang::Module *module = headerSearch.lookupModule(StringRef(moduleName), true, true);
 
    // Inform the user and abort if we can't find a module with a given name.
    if (!module) {
@@ -4214,7 +4214,7 @@ int RootClingMain(int argc,
       // flag is passed.
 
       // includeDir is where modulemaps exist.
-      clingArgsInterpreter.push_back("-modulemap_overlay=" + includeDir);
+      clingArgsInterpreter.push_back("-includedir_loc=" + includeDir);
 #endif //R__MACOSX
 
       // We just pass -fmodules, the CIFactory will do the rest and configure
