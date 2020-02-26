@@ -20,7 +20,6 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include <system_error>
-#include <iostream>
 
 #ifndef NDEBUG
 #include "llvm/Support/GraphWriter.h"
@@ -99,7 +98,8 @@ ModuleManager::addModule(StringRef FileName, ModuleKind Type,
     ExpectedModTime = 0;
   }
   if (lookupModuleFile(FileName, ExpectedSize, ExpectedModTime, Entry)) {
-    std::cout << __LINE__ << std::endl;
+    ErrorStr = "module file out of date";
+    return OutOfDate;
   }
 
   if (!Entry && FileName != "-") {
@@ -109,6 +109,10 @@ ModuleManager::addModule(StringRef FileName, ModuleKind Type,
 
   // Check whether we already loaded this module, before
   if (ModuleFile *ModuleEntry = Modules.lookup(Entry)) {
+    // Check the stored signature.
+    if (checkSignature(ModuleEntry->Signature, ExpectedSignature, ErrorStr))
+      return OutOfDate;
+
     Module = ModuleEntry;
     updateModuleImports(*ModuleEntry, ImportedBy, ImportLoc);
     return AlreadyLoaded;
@@ -171,7 +175,7 @@ ModuleManager::addModule(StringRef FileName, ModuleKind Type,
     // validated by this process.
     if (!PCMCache->tryToRemoveBuffer(NewModule->FileName))
       FileMgr.invalidateCache(const_cast<FileEntry*>(NewModule->File));
-    std::cout << __LINE__ << std::endl;
+    return OutOfDate;
   }
 
   // We're keeping this module.  Store it everywhere.
