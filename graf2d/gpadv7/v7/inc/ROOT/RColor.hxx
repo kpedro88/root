@@ -18,6 +18,7 @@
 
 #include <array>
 #include <vector>
+#include <string>
 
 namespace ROOT {
 namespace Experimental {
