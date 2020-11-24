@@ -212,6 +212,12 @@ TStreamerInfo::TStreamerInfo(TClass *cl)
 
 TStreamerInfo::~TStreamerInfo()
 {
+   // Note: If a StreamerInfo is loaded from a file and is the same information
+   // as an existing one, it is assigned the same "unique id" and we need to double
+   // check before removing it from the global list.
+   if (fNumber >=0 && gROOT->GetListOfStreamerInfo()->At(fNumber) == this)
+      gROOT->GetListOfStreamerInfo()->RemoveAt(fNumber);
+
    delete [] fComp;     fComp     = 0;
    delete [] fCompFull; fCompFull = 0;
    delete [] fCompOpt;  fCompOpt  = 0;
@@ -566,8 +572,9 @@ void TStreamerInfo::Build(Bool_t isTransient)
                      element = new TStreamerObjectPointer(dmName, dmTitle, offset, dmFull);
                   } else {
                      element = new TStreamerObjectAnyPointer(dmName, dmTitle, offset, dmFull);
-                     if (!isTransient && !streamer && !clm->GetStreamer() && !clm->IsLoaded()) {
-                        Error("Build", "%s: %s has no streamer or dictionary, data member %s will not be saved", GetName(), dmFull, dmName);
+                     if (!isTransient && !streamer && !clm->GetStreamer() && !clm->IsLoaded() && !clm->fIsSyntheticPair) {
+                        Error("Build", "%s: %s has no streamer or dictionary, data member %s will not be saved",
+                              GetName(), dmFull, dmName);
                      }
                   }
                }
@@ -577,8 +584,9 @@ void TStreamerInfo::Build(Bool_t isTransient)
                element = new TStreamerString(dmName, dmTitle, offset);
             } else {
                element = new TStreamerObjectAny(dmName, dmTitle, offset, dmFull);
-               if (!isTransient && !streamer && !clm->GetStreamer() && !clm->IsLoaded()) {
-                  Warning("Build", "%s: %s has no streamer or dictionary, data member \"%s\" will not be saved", GetName(), dmFull, dmName);
+               if (!isTransient && !streamer && !clm->GetStreamer() && !clm->IsLoaded() && !clm->fIsSyntheticPair) {
+                  Warning("Build", "%s: %s has no streamer or dictionary, data member \"%s\" will not be saved",
+                          GetName(), dmFull, dmName);
                }
             }
          }
@@ -767,6 +775,13 @@ void TStreamerInfo::BuildCheck(TFile *file /* = 0 */, Bool_t load /* = kTRUE */)
             SetBit(kCanDelete);
             return;
          }
+      }
+      if (fClass->fIsSyntheticPair) {
+         // The format never change, no need to import the old StreamerInof
+         // (which anyway would have issue when being setup due to the lack
+         // of TDataMember in the TClass.
+         SetBit(kCanDelete);
+         return;
       }
 
       if (0 == strcmp("string",fClass->GetName())) {
@@ -2413,7 +2428,7 @@ void TStreamerInfo::BuildOld()
          element->SetOffset(kMissing);
       }
 
-      if (offset != kMissing && fClass->GetState() <= TClass::kEmulated) {
+      if (offset != kMissing && fClass->GetState() <= TClass::kEmulated && !fClass->fIsSyntheticPair) {
          // Note the initialization in this case are
          // delayed until __after__ the schema evolution
          // section, just in case the info has changed.
@@ -3077,6 +3092,13 @@ Bool_t TStreamerInfo::CompareContent(TClass *cl, TVirtualStreamerInfo *info, Boo
 
 void TStreamerInfo::ComputeSize()
 {
+   if (this == fClass->GetCurrentStreamerInfo()) {
+      if (fClass->GetState() >= TClass::kInterpreted || fClass->fIsSyntheticPair) {
+         fSize = fClass->GetClassSize();
+         return;
+      }
+   }
+
    TStreamerElement *element = (TStreamerElement*)fElements->Last();
    //faster and more precise to use last element offset +size
    //on 64 bit machines, offset may be forced to be a multiple of 8 bytes
@@ -5650,7 +5672,7 @@ static TStreamerElement* R__CreateEmulatedElement(const char *dmName, const std:
 // provoke the creation of the corresponding TClass.  This relies on the dictionary for
 // std::pair<const int, int> to already exist (or the interpreter information being available)
 // as it is used as a template.
-TVirtualStreamerInfo *TStreamerInfo::GenerateInfoForPair(const std::string &firstname, const std::string &secondname, bool silent)
+TVirtualStreamerInfo *TStreamerInfo::GenerateInfoForPair(const std::string &firstname, const std::string &secondname, bool silent, size_t hint_pair_offset, size_t hint_pair_size)
 {
    // Generate a TStreamerInfo for a std::pair<fname,sname>
    // This TStreamerInfo is then used as if it was read from a file to generate
@@ -5675,6 +5697,8 @@ TVirtualStreamerInfo *TStreamerInfo::GenerateInfoForPair(const std::string &firs
       delete i;
       return 0;
    }
+   if (hint_pair_offset)
+      size = hint_pair_offset;
    TStreamerElement *second = R__CreateEmulatedElement("second", secondname, size, silent);
    if (second) {
       i->GetElements()->Add( second );
@@ -5687,11 +5711,22 @@ TVirtualStreamerInfo *TStreamerInfo::GenerateInfoForPair(const std::string &firs
    gErrorIgnoreLevel = kError;
    i->BuildCheck(nullptr, kFALSE); // Skipping the loading part (it would leads to infinite recursion on this very routine)
    gErrorIgnoreLevel = oldlevel;
+   // In the state emulated, BuildOld would recalculate the offset and undo the offset update.
+   // Note: we should consider adding a new state just for this (the hints indicates that we are mapping a compiled class but
+   // then we would have to investigate all use of the state with <= and >= condition to make sure they are still appropriate).
+   if (hint_pair_size) {
+      i->GetClass()->SetClassSize(hint_pair_size);
+      i->GetClass()->fIsSyntheticPair = kTRUE;
+   }
+
    i->BuildOld();
+
+   if (hint_pair_size)
+      i->GetClass()->SetClassSize(hint_pair_size);
    return i;
 }
 
-TVirtualStreamerInfo *TStreamerInfo::GenerateInfoForPair(const std::string &pairclassname, bool silent)
+TVirtualStreamerInfo *TStreamerInfo::GenerateInfoForPair(const std::string &pairclassname, bool silent, size_t hint_pair_offset, size_t hint_pair_size)
 {
    const static int pairlen = strlen("pair<");
    if (pairclassname.compare(0, pairlen, "pair<") != 0) {
@@ -5709,5 +5744,5 @@ TVirtualStreamerInfo *TStreamerInfo::GenerateInfoForPair(const std::string &pair
       return nullptr;
    }
 
-   return GenerateInfoForPair(inside[1], inside[2], silent);
+   return GenerateInfoForPair(inside[1], inside[2], silent, hint_pair_offset, hint_pair_size);
 }

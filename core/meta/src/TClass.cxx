@@ -1053,7 +1053,7 @@ TClass::TClass() :
    fStreamer(0), fIsA(0), fGlobalIsA(0), fIsAMethod(0),
    fMerge(0), fResetAfterMerge(0), fNew(0), fNewArray(0), fDelete(0), fDeleteArray(0),
    fDestructor(0), fDirAutoAdd(0), fStreamerFunc(0), fConvStreamerFunc(0), fSizeof(-1),
-   fCanSplit(-1), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
+   fCanSplit(-1), fIsSyntheticPair(kFALSE), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
    fIsOffsetStreamerSet(kFALSE), fVersionUsed(kFALSE), fRuntimeProperties(0), fOffsetStreamer(0), fStreamerType(TClass::kDefault),
    fState(kNoInfo),
    fCurrentInfo(0), fLastReadInfo(0), fRefProxy(0),
@@ -1091,7 +1091,7 @@ TClass::TClass(const char *name, Bool_t silent) :
    fStreamer(0), fIsA(0), fGlobalIsA(0), fIsAMethod(0),
    fMerge(0), fResetAfterMerge(0), fNew(0), fNewArray(0), fDelete(0), fDeleteArray(0),
    fDestructor(0), fDirAutoAdd(0), fStreamerFunc(0), fConvStreamerFunc(0), fSizeof(-1),
-   fCanSplit(-1), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
+   fCanSplit(-1), fIsSyntheticPair(kFALSE), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
    fIsOffsetStreamerSet(kFALSE), fVersionUsed(kFALSE), fRuntimeProperties(0), fOffsetStreamer(0), fStreamerType(TClass::kDefault),
    fState(kNoInfo),
    fCurrentInfo(0), fLastReadInfo(0), fRefProxy(0),
@@ -1138,7 +1138,7 @@ TClass::TClass(const char *name, Version_t cversion, Bool_t silent) :
    fStreamer(0), fIsA(0), fGlobalIsA(0), fIsAMethod(0),
    fMerge(0), fResetAfterMerge(0), fNew(0), fNewArray(0), fDelete(0), fDeleteArray(0),
    fDestructor(0), fDirAutoAdd(0), fStreamerFunc(0), fConvStreamerFunc(0), fSizeof(-1),
-   fCanSplit(-1), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
+   fCanSplit(-1), fIsSyntheticPair(kFALSE), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
    fIsOffsetStreamerSet(kFALSE), fVersionUsed(kFALSE), fRuntimeProperties(0), fOffsetStreamer(0), fStreamerType(TClass::kDefault),
    fState(kNoInfo),
    fCurrentInfo(0), fLastReadInfo(0), fRefProxy(0),
@@ -1165,7 +1165,7 @@ TClass::TClass(const char *name, Version_t cversion, EState theState, Bool_t sil
    fStreamer(0), fIsA(0), fGlobalIsA(0), fIsAMethod(0),
    fMerge(0), fResetAfterMerge(0), fNew(0), fNewArray(0), fDelete(0), fDeleteArray(0),
    fDestructor(0), fDirAutoAdd(0), fStreamerFunc(0), fConvStreamerFunc(0), fSizeof(-1),
-   fCanSplit(-1), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
+   fCanSplit(-1), fIsSyntheticPair(kFALSE), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
    fIsOffsetStreamerSet(kFALSE), fVersionUsed(kFALSE), fRuntimeProperties(0), fOffsetStreamer(0), fStreamerType(TClass::kDefault),
    fState(theState),
    fCurrentInfo(0), fLastReadInfo(0), fRefProxy(0),
@@ -1209,7 +1209,7 @@ TClass::TClass(ClassInfo_t *classInfo, Version_t cversion,
    fStreamer(0), fIsA(0), fGlobalIsA(0), fIsAMethod(0),
    fMerge(0), fResetAfterMerge(0), fNew(0), fNewArray(0), fDelete(0), fDeleteArray(0),
    fDestructor(0), fDirAutoAdd(0), fStreamerFunc(0), fConvStreamerFunc(0), fSizeof(-1),
-   fCanSplit(-1), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
+   fCanSplit(-1), fIsSyntheticPair(kFALSE), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
    fIsOffsetStreamerSet(kFALSE), fVersionUsed(kFALSE), fRuntimeProperties(0), fOffsetStreamer(0), fStreamerType(TClass::kDefault),
    fState(kNoInfo),
    fCurrentInfo(0), fLastReadInfo(0), fRefProxy(0),
@@ -1259,7 +1259,7 @@ TClass::TClass(const char *name, Version_t cversion,
    fStreamer(0), fIsA(0), fGlobalIsA(0), fIsAMethod(0),
    fMerge(0), fResetAfterMerge(0), fNew(0), fNewArray(0), fDelete(0), fDeleteArray(0),
    fDestructor(0), fDirAutoAdd(0), fStreamerFunc(0), fConvStreamerFunc(0), fSizeof(-1),
-   fCanSplit(-1), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
+   fCanSplit(-1), fIsSyntheticPair(kFALSE), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
    fIsOffsetStreamerSet(kFALSE), fVersionUsed(kFALSE), fRuntimeProperties(0), fOffsetStreamer(0), fStreamerType(TClass::kDefault),
    fState(kNoInfo),
    fCurrentInfo(0), fLastReadInfo(0), fRefProxy(0),
@@ -1290,7 +1290,7 @@ TClass::TClass(const char *name, Version_t cversion,
    fStreamer(0), fIsA(0), fGlobalIsA(0), fIsAMethod(0),
    fMerge(0), fResetAfterMerge(0), fNew(0), fNewArray(0), fDelete(0), fDeleteArray(0),
    fDestructor(0), fDirAutoAdd(0), fStreamerFunc(0), fConvStreamerFunc(0), fSizeof(-1),
-   fCanSplit(-1), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
+   fCanSplit(-1), fIsSyntheticPair(kFALSE), fProperty(0), fClassProperty(0), fHasRootPcmInfo(kFALSE), fCanLoadClassInfo(kFALSE),
    fIsOffsetStreamerSet(kFALSE), fVersionUsed(kFALSE), fRuntimeProperties(0), fOffsetStreamer(0), fStreamerType(TClass::kDefault),
    fState(kHasTClassInit),
    fCurrentInfo(0), fLastReadInfo(0), fRefProxy(0),
@@ -2928,6 +2928,11 @@ TVirtualIsAProxy* TClass::GetIsAProxy() const
 
 TClass *TClass::GetClass(const char *name, Bool_t load, Bool_t silent)
 {
+   return TClass::GetClass(name, load, silent, 0, 0);
+}
+
+TClass *TClass::GetClass(const char *name, Bool_t load, Bool_t silent, size_t hint_pair_offset, size_t hint_pair_size)
+{
    if (!name || !name[0]) return 0;
 
    if (strstr(name, "(anonymous)")) return 0;
@@ -3086,12 +3091,11 @@ TClass *TClass::GetClass(const char *name, Bool_t load, Bool_t silent)
    // TClass if we have one.
    if (cl) return cl;
 
-   if (ispair) {
-      auto pairinfo = TVirtualStreamerInfo::Factory()->GenerateInfoForPair(normalizedName, silent);
+   if (ispair &&  hint_pair_offset && hint_pair_size) {
+      auto pairinfo = TVirtualStreamerInfo::Factory()->GenerateInfoForPair(normalizedName, silent, hint_pair_offset, hint_pair_size);
       //return pairinfo ? pairinfo->GetClass() : nullptr;
       if (pairinfo)
          return pairinfo->GetClass();
-
    } else if (TClassEdit::IsSTLCont( normalizedName.c_str() )) {
 
       return gInterpreter->GenerateTClass(normalizedName.c_str(), kTRUE, silent);
@@ -3174,7 +3178,7 @@ TClass *TClass::GetClass(const char *name, Bool_t load, Bool_t silent)
 ////////////////////////////////////////////////////////////////////////////////
 /// Return pointer to class with name.
 
-TClass *TClass::GetClass(const std::type_info& typeinfo, Bool_t load, Bool_t /* silent */)
+TClass *TClass::GetClass(const std::type_info& typeinfo, Bool_t load, Bool_t /* silent */, size_t hint_pair_offset, size_t hint_pair_size)
 {
    if (!gROOT->GetListOfClasses())
       return 0;
@@ -3239,9 +3243,20 @@ TClass *TClass::GetClass(const std::type_info& typeinfo, Bool_t load, Bool_t /* 
    if (autoload_old && gInterpreter->AutoLoad(typeinfo,kTRUE)) {
       // Disable autoload to avoid potential infinite recursion
       TInterpreter::SuspendAutoLoadingRAII autoloadOff(gInterpreter);
-      cl = GetClass(typeinfo, load);
+      cl = GetClass(typeinfo, load, hint_pair_offset, hint_pair_size);
       if (cl) {
          return cl;
+      }
+   }
+
+   if (hint_pair_offset) {
+      int err = 0;
+      char* demangled_name = TClassEdit::DemangleTypeIdName(typeinfo, err);
+      if (!err) {
+         cl = TClass::GetClass(demangled_name, load, kTRUE, hint_pair_offset, hint_pair_size);
+         free(demangled_name);
+         if (cl)
+            return cl;
       }
    }
 
