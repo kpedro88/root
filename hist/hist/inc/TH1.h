@@ -217,6 +217,8 @@ public:
    virtual Int_t    Fill(const char *name, Double_t w);
    virtual void     FillN(Int_t ntimes, const Double_t *x, const Double_t *w, Int_t stride=1);
    virtual void     FillN(Int_t, const Double_t *, const Double_t *, const Double_t *, Int_t) {;}
+   virtual void     FillRandom(const char *fname, Int_t ntimes=5000);
+   virtual void     FillRandom(TH1 *h, Int_t ntimes=5000);
    virtual void     FillRandom(const char *fname, Int_t ntimes=5000, TRandom * rng = nullptr);
    virtual void     FillRandom(TH1 *h, Int_t ntimes=5000, TRandom * rng = nullptr);
    virtual Int_t    FindBin(Double_t x, Double_t y=0, Double_t z=0);
