@@ -76,10 +76,8 @@ TMVA::Config::Config() :
    fIONames.fWeightFileExtension     = "weights";
    fIONames.fOptionsReferenceFileDir = "optionInfo";
 
-   // get number of CPU
-   SysInfo_t s;
-   gSystem->GetSysInfo(&s);
-   fNCpu = s.fCpus;
+   // remove GetLinuxSysInfo call that breaks igprof somehow
+   fNCpu = 1;
    
 }
 
