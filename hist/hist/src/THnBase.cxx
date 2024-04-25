@@ -24,6 +24,8 @@
 #include "TMath.h"
 #include "TRandom.h"
 #include "TVirtualPad.h"
+#include "THashList.h"
+#include "TObjString.h"
 
 #include "HFitInterface.h"
 #include "Fit/SparseData.h"
@@ -182,6 +184,16 @@ TH1* THnBase::CreateHist(const char* name, const char* title,
          } else {
             // uniform bins:
             hax[d]->Set(reqaxis->GetNbins(), reqaxis->GetXmin(), reqaxis->GetXmax());
+         }
+         // Copy the axis labels if needed.
+         THashList* labels = reqaxis->GetLabels();
+         if (labels) {
+            TIter iL(labels);
+            Int_t i = 1;
+            while (auto lb = static_cast<TObjString *>(iL())) {
+               hax[d]->SetBinLabel(i,lb->String().Data());
+               i++;
+            }
          }
       }
    }
